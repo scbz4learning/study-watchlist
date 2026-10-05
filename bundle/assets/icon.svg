@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#2f6fed"/>
+  <!-- 播放三角 -->
+  <path d="M25 20L45 32L25 44Z" fill="#ffffff"/>
+  <!-- 时间刻度：预算被切成分段 -->
+  <g stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9">
+    <line x1="14" y1="52" x2="50" y2="52"/>
+    <line x1="26" y1="48" x2="26" y2="56"/>
+    <line x1="38" y1="48" x2="38" y2="56"/>
+  </g>
+</svg>

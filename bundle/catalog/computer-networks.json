@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "query": "计算机网络 期末复习",
+  "source_host": "www.youtube.com",
+  "source_kind": "public video search results page",
+  "captured_at_utc": "2026-10-05 16:48 UTC",
+  "parser": "replicates makepad widgets/src/splash.rs yt_parse_results",
+  "note": "Real capture from the public video source. Every field is parsed from that page, not authored. Thumbnail and player addresses are derived from the id at render time, exactly as the runtime does.",
+  "count": 11,
+  "hits": [
+    {
+      "id": "6TMq7_PYfOI",
+      "title": "002 P03acn 1.1 网络复习   概述",
+      "channel": "Lan Mapping",
+      "length": "1:27:17",
+      "views": "87 views",
+      "age": "4y ago"
+    },
+    {
+      "id": "68IHWr2JbqI",
+      "title": "day08、01 复习+小综合实验",
+      "channel": "IT工作室",
+      "length": "44:42",
+      "views": "37 views",
+      "age": "6y ago"
+    },
+    {
+      "id": "8T-A_GSsRKA",
+      "title": "04-01-01 网络层级复习",
+      "channel": "Zack Micheal",
+      "length": "14:49",
+      "views": "216 views",
+      "age": "8y ago"
+    },
+    {
+      "id": "_R0F8P-lOew",
+      "title": "10分钟速通计算机网络 每个开发者都具备的计算机常识",
+      "channel": "吴悠讲编程",
+      "length": "10:38",
+      "views": "9,218 views",
+      "age": "2y ago"
+    },
+    {
+      "id": "T1fZHrf1uHw",
+      "title": "最新信息系统管理工程师教程|01计算机网络+信息安全|本周考试重点复习",
+      "channel": "趣味熊猫(eFunnyPanda)",
+      "length": "1:40:06",
+      "views": "17 views",
+      "age": "2y ago"
+    },
+    {
+      "id": "MMs0zxxR00o",
+      "title": "002 P05acn 1.3 网络复习   传输层",
+      "channel": "Lan Mapping",
+      "length": "58:25",
+      "views": "41 views",
+      "age": "4y ago"
+    },
+    {
+      "id": "o38DGjht9mg",
+      "title": "day20、01 复习",
+      "channel": "IT工作室",
+      "length": "37:58",
+      "views": "58 views",
+      "age": "6y ago"
+    },
+    {
+      "id": "_XdrH_2Y1zU",
+      "title": "001 [P69] 《计算机网络》总复习",
+      "channel": "Lan Mapping",
+      "length": "1:04:53",
+      "views": "137 views",
+      "age": "4y ago"
+    },
+    {
+      "id": "8ZkLhyfTko0",
+      "title": "002 P04acn 1.2 网络复习   应用层",
+      "channel": "Lan Mapping",
+      "length": "39:02",
+      "views": "51 views",
+      "age": "4y ago"
+    },
+    {
+      "id": "QP6yJY9aDL8",
+      "title": "27计算机网络-复习",
+      "channel": "technology information",
+      "length": "4:09",
+      "views": "510 views",
+      "age": "7y ago"
+    },
+    {
+      "id": "ZkOGvPlK31k",
+      "title": "5 Review 复习",
+      "channel": "Sean Ning",
+      "length": "26:46",
+      "views": "133 views",
+      "age": "3y ago"
+    }
+  ]
+}

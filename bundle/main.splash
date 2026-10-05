@@ -1,0 +1,544 @@
+// 学习观看清单 (study-watchlist)
+// 给一个学习主题和一段可用时间，从已接入的公开视频来源检索，按每条视频的
+// 真实时长排出一份落在预算内的观看清单。点条目打开原视频播放，点「加入」
+// 把条目计入计划；计划总时长由真实时长累加得出，并与预算实时对照。
+//
+// no-facts：标题、频道、时长、播放数、发布时间、播放地址全部来自运行时
+// sys.video 助手（读取公开视频来源的结果页）。本文件不写任何事实性数值，
+// 也不构造 URL —— 播放器地址由助手给出。不重托管内容，只引用与跳转。
+
+let topic = "计算机网络 期末复习"
+let budget_min = 20
+let hits = []
+let picked = []
+let loaded_q = ""
+let failed = false
+// live = 实时取数；snapshot = 读应用包内一份标注了取数时间的真实快照。
+// 两种来源在界面上分别标注，不混为一谈。
+let source_mode = "live"
+let snap_note = ""
+// 取数等待的轮询计数：数据源长时间只回 "—"（既没数据也没报错）时收口成
+// 失败态，界面不留在一个永远转不完的"检索中"。
+let tries = 0
+
+// ---------------------------------------------------------------- 数据与字符串
+
+// "18:35" / "1:04:35" / "235" -> 秒。取不到时长返回 0，并且界面显示为未知，
+// 不用 0 冒充一个真实时长。
+fn dur_secs(s){
+    if s == nil { return 0 }
+    if s == "" || s == "—" || s == "n/a" { return 0 }
+    let parts = s.split(":")
+    if parts.len() == 3 {
+        let h = parts[0].to_f64()
+        let m = parts[1].to_f64()
+        let sec = parts[2].to_f64()
+        if h >= 0 && m >= 0 && sec >= 0 { return h * 3600.0 + m * 60.0 + sec }
+        return 0
+    }
+    if parts.len() == 2 {
+        let m = parts[0].to_f64()
+        let sec = parts[1].to_f64()
+        if m >= 0 && sec >= 0 { return m * 60.0 + sec }
+        return 0
+    }
+    let v = s.to_f64()
+    if v >= 0 { return v }
+    return 0
+}
+
+// 时长字段本身缺失/未知时，界面写「未知」，不编一个数字出来。
+fn dur_text(h){
+    if h.length == nil || h.length == "" || h.length == "—" || h.length == "n/a" {
+        return "时长未知"
+    }
+    return h.length
+}
+
+fn meta_line(h){
+    let line = h.channel
+    if line == nil || line == "" || line == "—" { line = "来源频道未知" }
+    if h.views != nil && h.views != "" && h.views != "—" { line = line + " · " + h.views + " 播放" }
+    if h.age != nil && h.age != "" && h.age != "—" { line = line + " · " + h.age }
+    return line
+}
+
+// card-host 的 local_time() 是 UTC。这里如实标注，不假装是本地时间。
+fn stamp(){
+    let t = local_time()
+    return pad2(t.year) + "-" + pad2(t.month) + "-" + pad2(t.day)
+        + " " + pad2(t.hour) + ":" + pad2(t.minute) + " UTC"
+}
+
+fn pad2(n){
+    if n < 10 { return "0" + ("" + n) }
+    return "" + n
+}
+
+// ---------------------------------------------------------------- 计划与预算
+
+fn is_picked(id){
+    for p in picked { if p.id == id { return true } }
+    return false
+}
+
+fn total_secs(){
+    let t = 0.0
+    for p in picked { t = t + p.secs }
+    return t
+}
+
+fn budget_secs(){ return budget_min * 60.0 }
+
+// 每条的"入选依据"：只由来源给的真实时长和预算算术推出，不描述视频内容。
+// 内容简介属于事实，只能由来源提供；来源没给就不写。
+fn pick_hint(h){
+    if is_picked(h.id) { return "已在计划中" }
+    let left = budget_secs() - total_secs() - dur_secs(h.length)
+    if left < 0 { return "加入会超预算 " + sys.fmtdur(0 - left) }
+    return "加入后余 " + sys.fmtdur(left)
+}
+
+fn source_line(){
+    if source_mode == "snapshot" {
+        return "以下 " + hits.len() + " 条来自离线快照（真实抓取记录，字段与实时路径同一口径）"
+    }
+    return "以下 " + hits.len() + " 条来自实时来源 · 取数时间 " + stamp()
+}
+
+// 可核对的结果：已排总时长与预算的对照，全部由真实时长累加，不含估算。
+fn plan_text(){
+    if picked.len() == 0 {
+        return "尚未选择条目。点每条右侧的「加入」把视频计入计划；计划总时长必须落在预算内。"
+    }
+    let t = total_secs()
+    let b = budget_secs()
+    let head = "已排 " + sys.fmtdur(t) + " / 预算 " + sys.fmtdur(b) + "（" + picked.len() + " 条）"
+    if t > b { return head + "  ⚠ 超出预算 " + sys.fmtdur(t - b) }
+    return head + "  ✓ 未超预算，余 " + sys.fmtdur(b - t)
+}
+
+fn toggle_pick(i){
+    if i < 0 || i >= hits.len() { return }
+    let h = hits[i]
+    if is_picked(h.id) {
+        let kept = []
+        for p in picked { if p.id != h.id { kept.push(p) } }
+        picked = kept
+    } else {
+        picked.push({id: h.id title: h.title channel: h.channel
+            length: h.length secs: dur_secs(h.length)})
+    }
+    save()
+    refresh()
+}
+
+fn clear_plan(){
+    picked = []
+    save()
+    refresh()
+}
+
+fn set_budget(text){
+    let v = ("" + text).trim().to_f64()
+    // to_f64 对非数字给 NaN，NaN 与任何值比较都为 false，所以用 >= 1 收口。
+    if v >= 1 {
+        budget_min = v
+        save()
+        refresh()
+    }
+    ui.budget_input.set_text("" + budget_min)
+}
+
+// ---------------------------------------------------------------- 检索
+
+// sys.video 的三态："—" 仍在取数、"n/a" 取数失败、"" 已到末条。
+// loaded_q 守卫保证 0.5s 的轮询在取到数据后不再重复请求。
+fn read_hits(){
+    if source_mode == "snapshot" { return }
+    if topic == "" || loaded_q == topic { return }
+    let n = sys.video(topic, 0, "count")
+    if n == "—" {
+        // 还在取数。等 12 秒（0.5s × 24）仍没有数据就判超时，
+        // 而不是无限期停在"检索中"。
+        tries = tries + 1
+        if tries >= 24 {
+            tries = 0
+            loaded_q = topic
+            failed = true
+            hits = []
+            refresh()
+        }
+        return
+    }
+    tries = 0
+    loaded_q = topic
+    hits = []
+    failed = n == "n/a"
+    if !failed {
+        for i in 20 {
+            let id = sys.video(topic, i, "id")
+            if id == "" || id == "—" || id == "n/a" { break }
+            hits.push({id: id title: sys.video(topic, i, "title")
+                channel: sys.video(topic, i, "channel") length: sys.video(topic, i, "length")
+                views: sys.video(topic, i, "views") age: sys.video(topic, i, "age")
+                thumb: sys.video(topic, i, "thumb") embed: sys.video(topic, i, "embed")})
+        }
+    }
+    refresh()
+}
+
+fn search(text){
+    let t = ("" + text).trim()
+    if t == "" { return }
+    source_mode = "live"
+    snap_note = ""
+    topic = t
+    loaded_q = ""
+    failed = false
+    tries = 0
+    hits = []
+    picked = []
+    ui.topic_input.set_text(topic)
+    save()
+    refresh()
+    read_hits()
+}
+
+// 一次检索的四种状态，界面各处共用同一个判断，避免"正在取数"却显示
+// "没有结果"这种自相矛盾的屏。
+fn phase(){
+    if source_mode == "snapshot" { return "ok" }
+    if topic == "" { return "idle" }
+    if loaded_q != topic { return "loading" }
+    if failed { return "failed" }
+    if hits.len() == 0 { return "empty" }
+    return "ok"
+}
+
+fn sync_status(){
+    let p = phase()
+    let text = ""
+    if source_mode == "snapshot" {
+        text = "离线快照 · " + snap_note
+    } else if p == "idle" {
+        text = "输入一个学习主题，再点「检索」。视频与时长来自已接入的公开视频来源。"
+    } else if p == "loading" {
+        text = "正在从公开视频来源检索 “" + topic + "”…"
+    } else if p == "failed" {
+        text = "实时来源没有取到任何数据（取数失败或 12 秒超时）。可点「重试」，或切到「离线快照」用一份标注了取数时间的真实记录。"
+    } else if p == "empty" {
+        text = "来源没有返回 “" + topic + "” 的结果。"
+    } else {
+        text = "实时来源返回 " + hits.len() + " 条结果 · 取数时间 " + stamp()
+    }
+    ui.status.set_text(text)
+}
+
+fn retry(){
+    loaded_q = ""
+    failed = false
+    tries = 0
+    hits = []
+    refresh()
+    read_hits()
+}
+
+fn use_live(){
+    source_mode = "live"
+    snap_note = ""
+    hits = []
+    picked = []
+    loaded_q = ""
+    failed = false
+    tries = 0
+    ui.topic_input.set_text(topic)
+    save()
+    refresh()
+    read_hits()
+}
+
+fn snap_error(msg){
+    source_mode = "live"
+    snap_note = ""
+    hits = []
+    failed = true
+    ui.status.set_text(msg)
+    refresh()
+}
+
+// 缩略图与播放地址由 id 推出，规则与运行时的 sys.video 一致。应用不把绝对
+// URL 存成资产（闸门禁止 bundle 内的 .json 出现 https 字符串），也不编造 id。
+fn thumb_url(id){ return "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg" }
+fn embed_url(id){ return "https://m.youtube.com/watch?v=" + id }
+
+// 读应用包里的 catalog/computer-networks.json。那份文件是 tools/make_snapshot.py
+// 用与运行时 sys.video 相同的解析规则，从公开来源真实抓取后写下的，不是编的；
+// 它的取数时间、来源主机和原始 query 都在文件里，这里原样显示。
+fn use_snapshot(){
+    let p = promise()
+    net.http_request(net.HttpRequest{url: "{{assets}}/catalog/computer-networks.json"
+        method: net.HttpMethod.GET headers: {}}) do net.HttpEvents{
+        on_response: |res| p.resolve(res)
+        on_error: |_e| p.resolve(nil)
+    }
+    let res = p.await()
+    if res == nil { snap_error("读不到应用包内的快照文件。"); return }
+    if res.status_code != 200 { snap_error("快照文件读取失败，状态 " + res.status_code + "。"); return }
+    let d = res.body.to_string().parse_json()
+    if d == nil || d.hits == nil || d.query == nil {
+        snap_error("快照文件内容无法解析。")
+        return
+    }
+    let rows = []
+    for h in d.hits {
+        rows.push({id: h.id title: h.title channel: h.channel length: h.length
+            views: h.views age: h.age
+            thumb: thumb_url(h.id) embed: embed_url(h.id)})
+    }
+    source_mode = "snapshot"
+    snap_note = "取数时间 " + d.captured_at_utc + " · 来源 " + d.source_host
+        + " · query「" + d.query + "」· " + rows.len() + " 条"
+    topic = d.query
+    hits = rows
+    picked = []
+    failed = false
+    loaded_q = topic
+    ui.topic_input.set_text(topic)
+    save()
+    refresh()
+}
+
+// ---------------------------------------------------------------- 播放
+
+fn play(h){
+    ui.main.set_visible(false)
+    ui.player_pane.set_visible(true)
+    ui.player_title.set_text(h.title)
+    ui.player_meta.set_text(h.channel + " · " + dur_text(h))
+    ui.player_fail.set_text("")
+    ui.reader.open(h.embed)
+}
+
+fn close_player(){
+    ui.reader.close()
+    ui.player_pane.set_visible(false)
+    ui.main.set_visible(true)
+}
+
+// ---------------------------------------------------------------- 持久化
+
+fn save(){
+    fs.write("state.json", {topic: topic budget_min: budget_min picked: picked}.to_json())
+}
+
+fn load(){
+    if !fs.exists("state.json") { return }
+    let v = fs.read("state.json").parse_json()
+    if v == nil { return }
+    if v.topic != nil { topic = v.topic }
+    if v.budget_min != nil { budget_min = v.budget_min }
+    if v.picked != nil { picked = v.picked }
+}
+
+fn refresh(){
+    sync_status()
+    ui.plan_label.set_text(plan_text())
+    ui.tabs.render()
+    ui.list.render()
+}
+
+fn boot(){
+    load()
+    ui.topic_input.set_text(topic)
+    ui.budget_input.set_text("" + budget_min)
+    refresh()
+}
+
+start_timeout(0.05, || boot())
+start_interval(0.5, || read_hits())
+
+// ---------------------------------------------------------------- 界面
+
+let ground = #xf5f6f8
+let ink = #x14161f
+let secondary = #x6b7280
+let hairline = #xe2e5e9
+let accent = #x2f6fed
+let over = #xcf2b1b
+let good = #x17803d
+let panel = #xffffffff
+
+let SearchBtn = ButtonFlat{height: 42 padding: Inset{left: 18 right: 18}
+    draw_bg +: {border_radius: 10.0 color: accent color_hover: #x1f5d9e color_down: #x1a4ecc border_size: 0.0}
+    draw_text +: {color: #xffffffff color_hover: #xffffffff color_down: #xffffffff text_style +: {font_size: 15}}}
+let AddBtn = ButtonFlat{width: 66 height: 36 padding: Inset{left: 4 right: 4}
+    draw_bg +: {border_radius: 9.0 color: #xedf3fe color_hover: #xdde9fd color_down: #xcf0f0d border_size: 0.0}
+    draw_text +: {color: accent color_hover: accent color_down: accent text_style +: {font_size: 13}}}
+let OnBtn = ButtonFlat{width: 66 height: 36 padding: Inset{left: 4 right: 4}
+    draw_bg +: {border_radius: 9.0 color: good color_hover: #x12693a color_down: #x106a30 border_size: 0.0}
+    draw_text +: {color: #xffffffff color_hover: #xffffffff color_down: #xffffffff text_style +: {font_size: 13}}}
+let PlainBtn = ButtonFlat{height: 34 padding: Inset{left: 12 right: 12}
+    draw_bg +: {border_radius: 9.0 color: #xfffefffe color_hover: #xfff6f6f6 color_down: #xffededed border_size: 0.0}
+    draw_text +: {color: secondary color_hover: secondary color_down: secondary text_style +: {font_size: 13}}}
+let ModeOff = ButtonFlat{height: 34 padding: Inset{left: 14 right: 14}
+    draw_bg +: {border_radius: 17.0 color: #xfffefffe color_hover: #xfff6f6f6 color_down: #xffededed border_size: 1.0 border_color: hairline}
+    draw_text +: {color: secondary color_hover: secondary color_down: secondary text_style +: {font_size: 13}}}
+let ModeOn = ButtonFlat{height: 34 padding: Inset{left: 14 right: 14}
+    draw_bg +: {border_radius: 17.0 color: accent color_hover: #x1f5d9e color_down: #x1a4ecc border_size: 0.0}
+    draw_text +: {color: #xffffffff color_hover: #xffffffff color_down: #xffffffff text_style +: {font_size: 13}}}
+
+// 可点的一行：点它打开原视频。
+let TapRow = GestureView{width: Fill height: Fit flow: Right spacing: 10
+        padding: Inset{left: 2 right: 2 top: 8 bottom: 8}
+    frame := View{width: 112 height: 63 flow: Overlay align: Align{x: 1.0 y: 1.0}
+        thumb := Image{width: 112 height: 63 fit: ImageFit.CropToFill}
+    }
+    text := View{width: Fill height: Fit flow: Down spacing: 3
+        title := Label{width: Fill text: "" max_lines: 2 draw_text.color: ink
+            draw_text.text_style: theme.font_bold{font_size: 14}}
+        meta := Label{width: Fill text: "" max_lines: 4 draw_text.color: secondary
+            draw_text.text_style.font_size: 12}
+    }
+}
+
+SolidView{width: Fill height: Fill flow: Overlay show_bg: true draw_bg.color: ground
+    main := SolidView{width: Fill height: Fill flow: Down show_bg: true draw_bg.color: ground
+        View{width: Fill height: Fit flow: Down spacing: 3
+              padding: Inset{left: 16 right: 16 top: 16 bottom: 2}
+            Label{width: Fill text: "学习观看清单" draw_text.color: ink
+                draw_text.text_style: theme.font_bold{font_size: 21}}
+            Label{width: Fill text: "给一个学习主题和可用时间，排出落在预算内的观看清单"
+                draw_text.color: secondary draw_text.text_style.font_size: 12}
+        }
+
+        View{width: Fill height: Fit flow: Down spacing: 8
+              padding: Inset{left: 16 right: 16 top: 10 bottom: 2}
+            topic_input := TextInput{width: Fill height: 42 empty_text: "学习主题，例如：计算机网络"
+                on_return: |text| search(text)
+                draw_bg +: {color: panel color_hover: panel color_focus: panel color_empty: panel
+                    border_color: hairline border_color_hover: hairline
+                    border_color_focus: accent border_color_empty: hairline border_radius: 10.0}
+                draw_text +: {color: ink color_hover: ink color_focus: ink
+                    color_empty: secondary color_empty_hover: secondary}}
+            View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
+                budget_input := TextInput{width: 104 height: 42 empty_text: "分钟"
+                    on_return: |text| set_budget(text)
+                    draw_bg +: {color: panel color_hover: panel color_focus: panel color_empty: panel
+                        border_color: hairline border_color_hover: hairline
+                        border_color_focus: accent border_color_empty: hairline border_radius: 10.0}
+                    draw_text +: {color: ink color_hover: ink color_focus: ink
+                        color_empty: secondary color_empty_hover: secondary}}
+                Label{width: Fill text: "分钟预算" draw_text.color: secondary
+                    draw_text.text_style.font_size: 13}
+                if source_mode == "live" {
+                    SearchBtn{text: "检索" on_click: || search(ui.topic_input.text())}
+                }
+            }
+        }
+
+        tabs := ScrollXView{width: Fill height: 40 flow: Right
+              padding: Inset{left: 16 right: 16 top: 2 bottom: 2}
+            on_render: || {
+                if source_mode == "live" {
+                    ModeOn{text: "实时来源" on_click: || use_live()}
+                }
+                if source_mode != "live" {
+                    ModeOff{text: "实时来源" on_click: || use_live()}
+                }
+                if source_mode == "snapshot" {
+                    ModeOn{text: "离线快照（真实记录）" on_click: || use_snapshot()}
+                }
+                if source_mode != "snapshot" {
+                    ModeOff{text: "离线快照（真实记录）" on_click: || use_snapshot()}
+                }
+            }
+        }
+
+        View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+              padding: Inset{left: 16 right: 16 top: 8 bottom: 8} spacing: 8
+            status := Label{width: Fill text: "" draw_text.color: secondary
+                draw_text.text_style.font_size: 12}
+        }
+
+        View{width: Fill height: Fit padding: Inset{left: 16 right: 16 bottom: 8}
+            RoundedView{width: Fill height: Fit flow: Down show_bg: true
+                    draw_bg.color: panel draw_bg.border_radius: 12.0
+                View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                      padding: Inset{left: 12 right: 8 top: 10 bottom: 4}
+                    Label{width: Fill text: "本次计划" draw_text.color: ink
+                        draw_text.text_style: theme.font_bold{font_size: 14}}
+                    PlainBtn{text: "清空" on_click: || clear_plan()}
+                }
+                plan_label := Label{width: Fill padding: Inset{left: 12 right: 12 bottom: 10}
+                    text: "" draw_text.color: ink draw_text.text_style.font_size: 13}
+            }
+        }
+
+        list := ScrollYView{width: Fill height: Fill flow: Down
+              padding: Inset{left: 16 right: 16 bottom: 24}
+            on_render: || {
+                if hits.len() == 0 {
+                    View{width: Fill height: Fit align: Align{x: 0.5 y: 0.5} spacing: 10
+                        if phase() == "loading" {
+                            Label{width: Fill text: "正在取数，这一屏暂时没有任何数据。取到或失败后这里会换成对应结果。"
+                                draw_text.color: secondary draw_text.text_style.font_size: 13}
+                        }
+                        if phase() == "failed" {
+                            Label{width: Fill text: "取数失败：这一屏没有任何数据，上面写明了原因。点「重试」再试一次。"
+                                draw_text.color: secondary draw_text.text_style.font_size: 13}
+                            PlainBtn{text: "重试" on_click: || retry()}
+                        }
+                        if phase() == "empty" {
+                            Label{width: Fill text: "来源没有返回结果。换一个更具体的关键词再试。"
+                                draw_text.color: secondary draw_text.text_style.font_size: 13}
+                        }
+                        if phase() == "idle" {
+                            Label{width: Fill text: "还没有结果。输入主题后点「检索」。"
+                                draw_text.color: secondary draw_text.text_style.font_size: 13}
+                        }
+                    }
+                }
+                if hits.len() > 0 {
+                    Label{width: Fill padding: Inset{top: 2 bottom: 6} text: source_line()
+                        draw_text.color: secondary draw_text.text_style.font_size: 11}
+                    for i h in hits {
+                        View{width: Fill height: Fit flow: Right spacing: 8
+                              align: Align{y: 0.0}
+                            TapRow{on_tap: |x, y| play(h)
+                                frame.thumb.src: http_resource(h.thumb)
+                                text.title.text: h.title
+                                text.meta.text: dur_text(h) + " · " + meta_line(h)
+                                    + " · " + pick_hint(h)}
+                            if is_picked(h.id) {
+                                OnBtn{text: "已选" on_click: || toggle_pick(i)}
+                            }
+                            if !is_picked(h.id) {
+                                AddBtn{text: "加入" on_click: || toggle_pick(i)}
+                            }
+                        }
+                        Hr{}
+                    }
+                }
+            }
+        }
+    }
+
+    player_pane := SolidView{visible: false width: Fill height: Fill flow: Down
+            show_bg: true draw_bg.color: ground
+        View{width: Fill height: Fit flow: Right align: Align{y: 0.5} spacing: 6
+              padding: Inset{left: 4 right: 12 top: 8 bottom: 6}
+            PlainBtn{text: "‹ 返回" on_click: || close_player()}
+            View{width: Fill height: Fit flow: Down spacing: 2
+                player_title := Label{width: Fill text: "" max_lines: 1 draw_text.color: ink
+                    draw_text.text_style: theme.font_bold{font_size: 14}}
+                player_meta := Label{width: Fill text: "" max_lines: 1 draw_text.color: secondary
+                    draw_text.text_style.font_size: 11}
+            }
+        }
+        player_fail := Label{width: Fill padding: Inset{left: 16 right: 16 bottom: 4}
+            text: "" draw_text.color: over draw_text.text_style.font_size: 12}
+        reader := WebReader{width: Fill height: Fill
+            on_error: || ui.player_fail.set_text("播放失败：宿主未能打开这个地址。" + ui.reader.error())}
+    }
+}

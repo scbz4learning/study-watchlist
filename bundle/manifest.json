@@ -1,0 +1,22 @@
+{
+  "capabilities": [
+    "storage",
+    "net",
+    "images",
+    "web"
+  ],
+  "id": "study-watchlist",
+  "integrity": {
+    "bundle_blake3": "30c18a433bedcec86e67528200c5829dc9958bb78f83c47fb8c449d839ae56f0"
+  },
+  "name": "学习观看清单",
+  "network": {
+    "hosts": [
+      "www.youtube.com",
+      "m.youtube.com",
+      "i.ytimg.com"
+    ]
+  },
+  "schema": 1,
+  "version": "0.1.0"
+}
