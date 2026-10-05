@@ -154,6 +154,9 @@ Linux 上首次构建 `card-host` 需要系统图形库（wayland / X11 / ALSA /
 
 | 项 | 状态 |
 |---|---|
+| `tools/octo check bundle` | ✅ **PASSED**（只有 unsigned 警告）：
+  `study-watchlist 0.1.0 — PASSED` / `[warning] publisher-signature: unsigned: accountability rests on the hub alone` /
+  `grants: capabilities {"images","net","storage","web"}, hosts {"i.ytimg.com","m.youtube.com","www.youtube.com"}, storage 16777216 bytes, agent none` |
 | `bundle/screenshots/01-plan-verified.png` | ✅ 真实捕获：离线快照 11 条真实结果 + 预算 120 分钟 + 一条已加入 + `已排 44:42 / 预算 2:00:00 ✓ 余 1:15:18` |
 | `bundle/screenshots/02-source-unavailable.png` | ✅ 真实捕获：实时路径 12 秒超时后的失败态 + 「重试」 |
 | 一次操作 + 可核对结果 | ✅ 加入一条 → 计划总时长与预算差额实时更新（算术可用来源时长复核） |
