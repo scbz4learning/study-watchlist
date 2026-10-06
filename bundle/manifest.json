@@ -7,16 +7,17 @@
   ],
   "id": "study-watchlist",
   "integrity": {
-    "bundle_blake3": "f6b8a80c8f0e17a04bef73d10ed87e1fae1ea76fc97dbda3147d96d62610a3f5"
+    "bundle_blake3": "5162ee9f98abdc3abcf6ff6e2a3ad2f29fa28a5a09562bf4fae9b49f4e7b2f31"
   },
   "name": "学习观看清单",
   "network": {
     "hosts": [
-      "www.youtube.com",
-      "m.youtube.com",
-      "i.ytimg.com"
+      "api.bilibili.com",
+      "www.bilibili.com",
+      "i0.hdslb.com",
+      "i1.hdslb.com"
     ]
   },
   "schema": 1,
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

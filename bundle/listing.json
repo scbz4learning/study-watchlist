@@ -1,21 +1,22 @@
 {
   "schema": 1,
   "subtitle": "给一个学习主题和可用时间，排出落在预算内的观看清单",
-  "description": "输入一个学习主题和一段可用时间（分钟）。应用从已接入的公开视频来源取回候选视频，按来源给出的真实时长排出总时长落在预算内的观看清单；每条显示来源频道、发布时间、播放量，以及加入后预算的余量或超支量。点条目会在系统 WebReader 中打开该视频的原页面播放；把条目加入计划后，计划总时长与预算的差额实时更新。取不到数据（失败、超时或空结果）时如实显示，并给出「重试」与「离线快照」两条恢复路径；任何数值都不会由应用编造。",
+  "description": "输入一个学习主题和一段可用时间（分钟）。应用从已声明的公开视频来源（bilibili 公开搜索 v2，免 key）实时取回候选视频，按来源给出的真实时长排出总时长落在预算内的观看清单；每条显示来源频道、发布时间、播放量，以及加入后预算的余量或超支量。点条目会把播放地址交给宿主 WebReader；把条目加入计划后，计划总时长与预算的差额实时更新。取不到数据（失败、超时或空结果）时如实显示，并给出「重试」与「离线快照」两条恢复路径；任何数值都不会由应用编造。",
   "category": "education",
-  "keywords": ["学习", "备考", "视频", "时间预算", "观看清单", "agent"],
+  "keywords": ["学习", "备考", "视频", "时间预算", "观看清单", "agent", "bilibili"],
   "screenshots": [
     "screenshots/01-plan-verified.png",
-    "screenshots/02-source-unavailable.png"
+    "screenshots/02-source-unavailable.png",
+    "screenshots/03-playback.png"
   ],
   "icon": "assets/icon.svg",
-  "platforms": ["android"],
+  "platforms": ["linux", "android"],
   "publisher": {
     "name": "lymio-lab",
     "support": "https://github.com/lymio-lab/study-watchlist/issues",
     "privacy_policy_url": "https://github.com/lymio-lab/study-watchlist/blob/main/PRIVACY.md"
   },
-  "release_notes": "0.1.0 — 主题 + 时间预算 → 观看清单；真实时长预算核验；逐条授权；真实打开播放；失败/超时/空结果如实呈现，含重试与离线快照。",
+  "release_notes": "0.2.0 — 数据源迁到 bilibili 公开搜索 v2（免 key，国内可达）；新增真正的实时路径；时长预算核验对真实 4 小时课程仍算数；播放面板显示真实地址，card-host on Linux 缺网页引擎已如实标注；失败/空/加载三态齐全；离线快照为可选 fallback。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

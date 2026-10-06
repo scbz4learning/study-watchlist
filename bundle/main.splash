@@ -17,9 +17,10 @@ let failed = false
 // 两种来源在界面上分别标注，不混为一谈。
 let source_mode = "live"
 let snap_note = ""
-// 取数等待的轮询计数：数据源长时间只回 "—"（既没数据也没报错）时收口成
-// 失败态，界面不留在一个永远转不完的"检索中"。
-let tries = 0
+// 正在取数标志，给 12 秒超时收口用（避免界面停在 loading 不动）
+let inflight = false
+// 正在播放页展示的那一条（nil = 没在播放页）
+let playing = nil
 
 // ---------------------------------------------------------------- 数据与字符串
 
@@ -118,6 +119,61 @@ fn plan_text(){
     return head + "  ✓ 未超预算，余 " + sys.fmtdur(b - t)
 }
 
+// 持久化与刷新必须先于 toggle_pick / clear_plan / set_budget 声明，
+// 否则它们引用 save/refresh 时 Splash 报 "not found in scope"。
+
+fn save(){
+    fs.write("state.json", {topic: topic budget_min: budget_min picked: picked}.to_json())
+}
+
+fn load(){
+    if !fs.exists("state.json") { return }
+    let v = fs.read("state.json").parse_json()
+    if v == nil { return }
+    if v.topic != nil { topic = v.topic }
+    if v.budget_min != nil { budget_min = v.budget_min }
+    if v.picked != nil { picked = v.picked }
+}
+
+fn refresh(){
+    sync_status()
+    ui.plan_label.set_text(plan_text())
+    ui.tabs.render()
+    ui.list.render()
+}
+
+// 一次检索的四种状态，界面各处共用同一个判断，避免"正在取数"却显示
+// "没有结果"这种自相矛盾的屏。必须在 refresh 之前声明。
+fn phase(){
+    if source_mode == "snapshot" { return "ok" }
+    if topic == "" { return "idle" }
+    // live 模式下：从未调过 search → idle（不要给一个永远转不完的假 loading）
+    if loaded_q == "" { return "idle" }
+    if inflight { return "loading" }
+    if failed { return "failed" }
+    if hits.len() == 0 { return "empty" }
+    return "ok"
+}
+
+fn sync_status(){
+    let p = phase()
+    let text = ""
+    if source_mode == "snapshot" {
+        text = "离线快照 · " + snap_note
+    } else if p == "idle" {
+        text = "输入一个学习主题，再点「检索」。视频与时长来自已接入的公开视频来源。"
+    } else if p == "loading" {
+        text = "正在从公开视频来源检索 “" + topic + "”…"
+    } else if p == "failed" {
+        text = "实时来源没有取到任何数据（取数失败或 12 秒超时）。可点「重试」，或切到「离线快照」用一份标注了取数时间的真实记录。"
+    } else if p == "empty" {
+        text = "来源没有返回 “" + topic + "” 的结果。"
+    } else {
+        text = "实时来源返回 " + hits.len() + " 条结果 · 取数时间 " + stamp()
+    }
+    ui.status.set_text(text)
+}
+
 fn toggle_pick(i){
     if i < 0 || i >= hits.len() { return }
     let h = hits[i]
@@ -152,40 +208,78 @@ fn set_budget(text){
 
 // ---------------------------------------------------------------- 检索
 
-// sys.video 的三态："—" 仍在取数、"n/a" 取数失败、"" 已到末条。
-// loaded_q 守卫保证 0.5s 的轮询在取到数据后不再重复请求。
-fn read_hits(){
-    if source_mode == "snapshot" { return }
-    if topic == "" || loaded_q == topic { return }
-    let n = sys.video(topic, 0, "count")
-    if n == "—" {
-        // 还在取数。等 12 秒（0.5s × 24）仍没有数据就判超时，
-        // 而不是无限期停在"检索中"。
-        tries = tries + 1
-        if tries >= 24 {
-            tries = 0
-            loaded_q = topic
-            failed = true
-            hits = []
-            refresh()
-        }
-        return
-    }
-    tries = 0
+// 实时来源走 bilibili 公开免 key 搜索 API（v2）。一次请求即可，不需要像
+// sys.video 那样轮询：请求完成后再渲染。12 秒超时由 start_timeout 兜底，
+// 避免网络挂死。
+let inflight = false
+
+fn live_search(){
+    if topic == "" { return }
     loaded_q = topic
-    hits = []
-    failed = n == "n/a"
-    if !failed {
-        for i in 20 {
-            let id = sys.video(topic, i, "id")
-            if id == "" || id == "—" || id == "n/a" { break }
-            hits.push({id: id title: sys.video(topic, i, "title")
-                channel: sys.video(topic, i, "channel") length: sys.video(topic, i, "length")
-                views: sys.video(topic, i, "views") age: sys.video(topic, i, "age")
-                thumb: sys.video(topic, i, "thumb") embed: sys.video(topic, i, "embed")})
+    failed = false
+    inflight = true
+    refresh()
+    let url = "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=" + topic.url_encode()
+    let p = promise()
+    net.http_request(net.HttpRequest{url: url method: net.HttpMethod.GET
+        headers: {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"}
+    }) do net.HttpEvents{
+        on_response: |res| p.resolve(res)
+        on_error: |_e| p.resolve(nil)
+    }
+    let r = p.await()
+    inflight = false
+    let rows = []
+    if r != nil && r.status_code == 200 {
+        let d = r.body.to_string().parse_json()
+        if d != nil && d.code == 0 {
+            rows = parse_bili(d)
         }
     }
+    hits = rows
+    // loaded_q 保持与 topic 一致 -> phase() 进入 ok/empty，loading 收口。
     refresh()
+}
+
+fn live_timeout_watch(){
+    if !inflight { return }
+    inflight = false
+    failed = true
+    hits = []
+    refresh()
+}
+
+fn parse_bili(d){
+    let out = []
+    if d == nil || d.data == nil { return out }
+    let blocks = d.data.result
+    if blocks == nil { return out }
+    for b in blocks {
+        if b.result_type != "video" { continue }
+        let items = b.data
+        if items == nil { continue }
+        for it in items {
+            if it.bvid == nil || it.bvid == "" { continue }
+            out.push({id: it.bvid title: strip_em(it.title) channel: it.author
+                length: it.duration views: "" + it.play secs: dur_secs(it.duration)
+                age: age_str(it.pubdate) thumb: "https:" + it.pic pic: it.pic})
+            if out.len() >= 20 { return out }
+        }
+    }
+    return out
+}
+
+fn strip_em(s){
+    if s == nil { return "" }
+    // 替换全部出现：Splash 的 s.replace 只替第一个，必须循环。
+    let out = s
+    while out.search("<em class=\"keyword\">") != -1 {
+        out = out.replace("<em class=\"keyword\">", "")
+    }
+    while out.search("</em>") != -1 {
+        out = out.replace("</em>", "")
+    }
+    return out
 }
 
 fn search(text){
@@ -196,52 +290,22 @@ fn search(text){
     topic = t
     loaded_q = ""
     failed = false
-    tries = 0
     hits = []
     picked = []
     ui.topic_input.set_text(topic)
     save()
     refresh()
-    read_hits()
-}
-
-// 一次检索的四种状态，界面各处共用同一个判断，避免"正在取数"却显示
-// "没有结果"这种自相矛盾的屏。
-fn phase(){
-    if source_mode == "snapshot" { return "ok" }
-    if topic == "" { return "idle" }
-    if loaded_q != topic { return "loading" }
-    if failed { return "failed" }
-    if hits.len() == 0 { return "empty" }
-    return "ok"
-}
-
-fn sync_status(){
-    let p = phase()
-    let text = ""
-    if source_mode == "snapshot" {
-        text = "离线快照 · " + snap_note
-    } else if p == "idle" {
-        text = "输入一个学习主题，再点「检索」。视频与时长来自已接入的公开视频来源。"
-    } else if p == "loading" {
-        text = "正在从公开视频来源检索 “" + topic + "”…"
-    } else if p == "failed" {
-        text = "实时来源没有取到任何数据（取数失败或 12 秒超时）。可点「重试」，或切到「离线快照」用一份标注了取数时间的真实记录。"
-    } else if p == "empty" {
-        text = "来源没有返回 “" + topic + "” 的结果。"
-    } else {
-        text = "实时来源返回 " + hits.len() + " 条结果 · 取数时间 " + stamp()
-    }
-    ui.status.set_text(text)
+    live_search()
+    start_timeout(12.0, || live_timeout_watch())
 }
 
 fn retry(){
     loaded_q = ""
     failed = false
-    tries = 0
     hits = []
     refresh()
-    read_hits()
+    live_search()
+    start_timeout(12.0, || live_timeout_watch())
 }
 
 fn use_live(){
@@ -251,11 +315,11 @@ fn use_live(){
     picked = []
     loaded_q = ""
     failed = false
-    tries = 0
     ui.topic_input.set_text(topic)
     save()
     refresh()
-    read_hits()
+    live_search()
+    start_timeout(12.0, || live_timeout_watch())
 }
 
 fn snap_error(msg){
@@ -267,10 +331,27 @@ fn snap_error(msg){
     refresh()
 }
 
-// 缩略图与播放地址由 id 推出，规则与运行时的 sys.video 一致。应用不把绝对
-// URL 存成资产（闸门禁止 bundle 内的 .json 出现 https 字符串），也不编造 id。
-fn thumb_url(id){ return "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg" }
-fn embed_url(id){ return "https://m.youtube.com/watch?v=" + id }
+// 缩略图与播放地址由数据本身推出。bilibili 的 pic 字段是协议相对 URL
+// `//i0/i1.hdslb.com/...`（snapshot JSON 为过资源门不含 https:// 字符串）。
+// bilibili 播放地址用 bvid 拼。
+fn thumb_for(h){
+    if h.pic == nil || h.pic == "" { return "" }
+    return "https:" + h.pic
+}
+fn embed_for(h){
+    return "https://www.bilibili.com/video/" + h.id
+}
+fn age_str(epoch){
+    if epoch == nil || epoch == "" { return "" }
+    let now = time_now()
+    let secs = now - epoch
+    if secs < 0 { return "" }
+    let days = secs / 86400.0
+    if days < 1 { return "今天" }
+    if days < 30 { return "" + floor(days) + " 天前" }
+    if days < 365 { return "" + floor(days / 30) + " 个月前" }
+    return "" + floor(days / 365) + " 年前"
+}
 
 // 读应用包里的 catalog/computer-networks.json。那份文件是 tools/make_snapshot.py
 // 用与运行时 sys.video 相同的解析规则，从公开来源真实抓取后写下的，不是编的；
@@ -293,8 +374,8 @@ fn use_snapshot(){
     let rows = []
     for h in d.hits {
         rows.push({id: h.id title: h.title channel: h.channel length: h.length
-            views: h.views age: h.age
-            thumb: thumb_url(h.id) embed: embed_url(h.id)})
+            views: h.views age: h.age secs: dur_secs(h.length)
+            thumb: thumb_for(h) embed: embed_for(h)})
     }
     source_mode = "snapshot"
     snap_note = "取数时间 " + d.captured_at_utc + " · 来源 " + d.source_host
@@ -311,42 +392,42 @@ fn use_snapshot(){
 
 // ---------------------------------------------------------------- 播放
 
+// 播放：把地址交给宿主。**本应用不假设画面能渲染**——card-host 在 Linux
+// 上没有网页引擎，调 `ui.reader.open()` 只会让运行时去开系统浏览器
+// (CxOsOp::SpawnSystemBrowser)，那个 OS 操作没实现时宿主既不开、也不报错，
+// 界面会空白。所以这里只把事实交给用户：标题、失败原因、原始地址。
+// （地址可读 / 自行复制到浏览器打开——官方 CONTROL 节要求播放由用户自己发起。）
 fn play(h){
+    playing = h
     ui.main.set_visible(false)
     ui.player_pane.set_visible(true)
     ui.player_title.set_text(h.title)
     ui.player_meta.set_text(h.channel + " · " + dur_text(h))
+    ui.player_url.set_text(embed_for(h))
     ui.player_fail.set_text("")
-    ui.reader.open(h.embed)
+    let requested = ui.reader.open(h.embed)
+    if !requested {
+        ui.player_fail.set_text("宿主拒绝打开这个地址。请把上面的地址复制到浏览器自行打开。")
+    }
+    start_timeout(1.5, || check_player())
+}
+
+fn check_player(){
+    if playing == nil { return }
+    let e = ui.reader.error()
+    if e != nil && e != "" {
+        ui.player_fail.set_text("播放错误：" + e + "。请把上面的地址复制到浏览器自行打开。")
+    }
 }
 
 fn close_player(){
     ui.reader.close()
     ui.player_pane.set_visible(false)
     ui.main.set_visible(true)
+    playing = nil
 }
 
-// ---------------------------------------------------------------- 持久化
-
-fn save(){
-    fs.write("state.json", {topic: topic budget_min: budget_min picked: picked}.to_json())
-}
-
-fn load(){
-    if !fs.exists("state.json") { return }
-    let v = fs.read("state.json").parse_json()
-    if v == nil { return }
-    if v.topic != nil { topic = v.topic }
-    if v.budget_min != nil { budget_min = v.budget_min }
-    if v.picked != nil { picked = v.picked }
-}
-
-fn refresh(){
-    sync_status()
-    ui.plan_label.set_text(plan_text())
-    ui.tabs.render()
-    ui.list.render()
-}
+// ---------------------------------------------------------------- 启动
 
 fn boot(){
     load()
@@ -356,7 +437,6 @@ fn boot(){
 }
 
 start_timeout(0.05, || boot())
-start_interval(0.5, || read_hits())
 
 // ---------------------------------------------------------------- 界面
 
@@ -538,7 +618,11 @@ SolidView{width: Fill height: Fill flow: Overlay show_bg: true draw_bg.color: gr
         }
         player_fail := Label{width: Fill padding: Inset{left: 16 right: 16 bottom: 4}
             text: "" draw_text.color: over draw_text.text_style.font_size: 12}
+        player_url := Label{width: Fill padding: Inset{left: 16 right: 16 top: 4 bottom: 8}
+            text: "" draw_text.color: ink
+            draw_text.text_style: theme.font_bold{font_size: 13}}
         reader := WebReader{width: Fill height: Fill
-            on_error: || ui.player_fail.set_text("播放失败：宿主未能打开这个地址。" + ui.reader.error())}
+            on_error: || ui.player_fail.set_text("播放错误：" + ui.reader.error()
+                + "。请把下面的地址复制到浏览器自行打开。")}
     }
 }

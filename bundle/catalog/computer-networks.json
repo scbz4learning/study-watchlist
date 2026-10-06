@@ -1,100 +1,192 @@
 {
   "schema": 1,
   "query": "计算机网络 期末复习",
-  "source_host": "www.youtube.com",
-  "source_kind": "public video search results page",
-  "captured_at_utc": "2026-10-05 16:48 UTC",
-  "parser": "replicates makepad widgets/src/splash.rs yt_parse_results",
-  "note": "Real capture from the public video source. Every field is parsed from that page, not authored. Thumbnail and player addresses are derived from the id at render time, exactly as the runtime does.",
-  "count": 11,
+  "source_host": "api.bilibili.com",
+  "source_endpoint": "/x/web-interface/search/all/v2",
+  "captured_at_utc": "2026-10-06 12:59 UTC",
+  "parser": "bilibili v2 web search; no keys, no cookies",
+  "note": "Real capture from bilibili public search API. Every field is parsed from that response, not authored. Thumbnail URL is protocol-relative and player URL is derived from the bvid at render time, exactly as the runtime does.",
+  "count": 20,
   "hits": [
     {
-      "id": "6TMq7_PYfOI",
-      "title": "002 P03acn 1.1 网络复习   概述",
-      "channel": "Lan Mapping",
-      "length": "1:27:17",
-      "views": "87 views",
-      "age": "4y ago"
+      "id": "BV1H4kwYHEcR",
+      "title": "《计算机网络》4小时期末速成课！期末速成丨考前突击丨期末不挂科丨考点总结",
+      "channel": "数学建模老哥",
+      "length": "255:44",
+      "views": "2257666",
+      "age": "1 年前",
+      "pic": "//i0.hdslb.com/bfs/archive/e58ad01682fa3aa31c9330348f649cbcc4c1dd78.jpg"
     },
     {
-      "id": "68IHWr2JbqI",
-      "title": "day08、01 复习+小综合实验",
-      "channel": "IT工作室",
-      "length": "44:42",
-      "views": "37 views",
-      "age": "6y ago"
+      "id": "BV1464y1Z73S",
+      "title": "计算机网络期末复习 应用题",
+      "channel": "带月理荒秽",
+      "length": "71:16",
+      "views": "1994073",
+      "age": "5 年前",
+      "pic": "//i1.hdslb.com/bfs/archive/092114eef2a77fcee058bbefe3d110f2c87d9d0d.jpg"
     },
     {
-      "id": "8T-A_GSsRKA",
-      "title": "04-01-01 网络层级复习",
-      "channel": "Zack Micheal",
-      "length": "14:49",
-      "views": "216 views",
-      "age": "8y ago"
+      "id": "BV1rKj26kECC",
+      "title": "《计算机网络》4小时期末速成课！期末考试复习速成课资源 知识点梳理总结，期末速成丨考前突击丨期末不挂科丨考点总结",
+      "channel": "学编程的小可爱哟",
+      "length": "247:26",
+      "views": "105267",
+      "age": "3 个月前",
+      "pic": "//i2.hdslb.com/bfs/archive/ddf14172e62d13ecfadc4fcd995600c2175a23ef.jpg"
     },
     {
-      "id": "_R0F8P-lOew",
-      "title": "10分钟速通计算机网络 每个开发者都具备的计算机常识",
-      "channel": "吴悠讲编程",
-      "length": "10:38",
-      "views": "9,218 views",
-      "age": "2y ago"
+      "id": "BV1PK4y1X7ze",
+      "title": "【期末复习】7天快速通过计算机网络期末考试｜谢希仁版｜考前急救｜高效通过｜粉丝投稿",
+      "channel": "网络工程师学长",
+      "length": "474:9",
+      "views": "2582786",
+      "age": "5 年前",
+      "pic": "//i2.hdslb.com/bfs/archive/120387a2c6d4baf2b66ad6f534b22cab8bfb9c48.jpg"
     },
     {
-      "id": "T1fZHrf1uHw",
-      "title": "最新信息系统管理工程师教程|01计算机网络+信息安全|本周考试重点复习",
-      "channel": "趣味熊猫(eFunnyPanda)",
-      "length": "1:40:06",
-      "views": "17 views",
-      "age": "2y ago"
+      "id": "BV1JY4y1g7si",
+      "title": "【期末复习】计算机网络期末复习 | 真题讲解 | 大学课程考试",
+      "channel": "萌萌哒吉吉",
+      "length": "44:3",
+      "views": "177518",
+      "age": "4 年前",
+      "pic": "//i0.hdslb.com/bfs/archive/28321cbb63f6b1c7b985b89fe5340d7d9addc12a.jpg"
     },
     {
-      "id": "MMs0zxxR00o",
-      "title": "002 P05acn 1.3 网络复习   传输层",
-      "channel": "Lan Mapping",
-      "length": "58:25",
-      "views": "41 views",
-      "age": "4y ago"
+      "id": "BV1Ty4y1M7UK",
+      "title": "【计算机网络】4小时期末速成|计算机网络期末复习|计网|谢希仁第八版可用|复试调剂可用",
+      "channel": "绩满满",
+      "length": "77:34",
+      "views": "867818",
+      "age": "5 年前",
+      "pic": "//i1.hdslb.com/bfs/archive/d89ade934cc1d790f7d5b98d878cf51f19f52b31.jpg"
     },
     {
-      "id": "o38DGjht9mg",
-      "title": "day20、01 复习",
-      "channel": "IT工作室",
-      "length": "37:58",
-      "views": "58 views",
-      "age": "6y ago"
+      "id": "BV1j1TTznEki",
+      "title": "【MATLAB】1小时期末速成|MATLAB期末复习|复试调剂可用|绩满满",
+      "channel": "绩满满",
+      "length": "60:0",
+      "views": "187169",
+      "age": "1 年前",
+      "pic": "//i1.hdslb.com/bfs/archive/7e450d77de554d5fa86313f8b820e67e00d0f709.jpg"
     },
     {
-      "id": "_XdrH_2Y1zU",
-      "title": "001 [P69] 《计算机网络》总复习",
-      "channel": "Lan Mapping",
-      "length": "1:04:53",
-      "views": "137 views",
-      "age": "4y ago"
+      "id": "BV1x7dhBqEfV",
+      "title": "计算机网络全集",
+      "channel": "方方方已经存在了",
+      "length": "1516:38",
+      "views": "95764",
+      "age": "5 个月前",
+      "pic": "//i2.hdslb.com/bfs/archive/9a5b1ac65aaec6f8b23117e09e92a6b5e1aec835.jpg"
     },
     {
-      "id": "8ZkLhyfTko0",
-      "title": "002 P04acn 1.2 网络复习   应用层",
-      "channel": "Lan Mapping",
-      "length": "39:02",
-      "views": "51 views",
-      "age": "4y ago"
+      "id": "BV1inev6LEtB",
+      "title": "《计算机网络》4小时期末速成课！期末考试复习速成课资源 知识点梳理总结，期末速成丨考前突击丨期末不挂科丨考点总结",
+      "channel": "学编程的小可爱哟",
+      "length": "247:26",
+      "views": "1249",
+      "age": "15 天前",
+      "pic": "//i2.hdslb.com/bfs/archive/813df1fa7d1dff4f588e581abc7de3d06c04fc83.jpg"
     },
     {
-      "id": "QP6yJY9aDL8",
-      "title": "27计算机网络-复习",
-      "channel": "technology information",
-      "length": "4:09",
-      "views": "510 views",
-      "age": "7y ago"
+      "id": "BV1ufsjz5E3n",
+      "title": "【已完结】计算机网络4小时核心考点冲刺串讲！",
+      "channel": "哈喜老师",
+      "length": "238:1",
+      "views": "113768",
+      "age": "11 个月前",
+      "pic": "//i1.hdslb.com/bfs/archive/a484c4ced4b1c1db33a14514827030eb5ed9e63b.jpg"
     },
     {
-      "id": "ZkOGvPlK31k",
-      "title": "5 Review 复习",
-      "channel": "Sean Ning",
-      "length": "26:46",
-      "views": "133 views",
-      "age": "3y ago"
+      "id": "BV1c4411d7jb",
+      "title": "计算机网络微课堂（有字幕无背景音乐版）",
+      "channel": "湖科大教书匠",
+      "length": "946:52",
+      "views": "8878853",
+      "age": "7 年前",
+      "pic": "//i1.hdslb.com/bfs/archive/7f327f33e929cc5a4d4892384f7755b93bf7a741.jpg"
+    },
+    {
+      "id": "BV1JJzhBEEwD",
+      "title": "「中职计算机网络基础 | 不用死记硬背，轻松掌握理论知识（课程持续更新中）」",
+      "channel": "牢大的私房课",
+      "length": "492:57",
+      "views": "67424",
+      "age": "8 个月前",
+      "pic": "//i1.hdslb.com/bfs/archive/ab6cc6331120e1bc26ea8d28204f002cbc073f6b.jpg"
+    },
+    {
+      "id": "BV1tRHd6bE42",
+      "title": "十几分钟带你速学计算机网络",
+      "channel": "久夜难生眠",
+      "length": "17:59",
+      "views": "20",
+      "age": "今天",
+      "pic": "//i1.hdslb.com/bfs/archive/732f0ed106d01a5bec016df9c576e976a97261db.jpg"
+    },
+    {
+      "id": "BV1KWjMzoEnm",
+      "title": "《 计算机网络》不挂科期末考试复习速成课资源 知识点梳理总结",
+      "channel": "没冇耳朵的兔子",
+      "length": "201:14",
+      "views": "332371",
+      "age": "1 年前",
+      "pic": "//i2.hdslb.com/bfs/archive/d7ff2357d15616728a59579c19f19655e02ed2eb.jpg"
+    },
+    {
+      "id": "BV19E411D78Q",
+      "title": "王道计算机考研 计算机网络",
+      "channel": "王道计算机教育",
+      "length": "2103:20",
+      "views": "19026363",
+      "age": "7 年前",
+      "pic": "//i0.hdslb.com/bfs/archive/fb3d3f987949aecc3a77a991f55ac3fa49a17e26.jpg"
+    },
+    {
+      "id": "BV1444y1a7X1",
+      "title": "计算机网络期末考试题",
+      "channel": "锅巴三",
+      "length": "21:31",
+      "views": "132049",
+      "age": "4 年前",
+      "pic": "//i2.hdslb.com/bfs/archive/d69fa7f61fa00aed8ff06ec1c2ad0d258f07a60f.jpg"
+    },
+    {
+      "id": "BV1KQULBCEc9",
+      "title": "《计算机网络》期末复习资源 谢希仁版课程精讲 考研复习  基础知识框架复习",
+      "channel": "逻辑芒果",
+      "length": "2635:24",
+      "views": "46260",
+      "age": "10 个月前",
+      "pic": "//i2.hdslb.com/bfs/archive/272b900e909fabe25b0aadaaf69c1e117890b121.jpg"
+    },
+    {
+      "id": "BV1dtM96wEcG",
+      "title": "【网络安全】3小时网络安全期末速成|网络安全期末复习|网络安全技术|网络安全概论|各版本通用|复试|调剂|专升本可用|绩满满",
+      "channel": "小绩老师计算机",
+      "length": "213:1",
+      "views": "5600",
+      "age": "1 个月前",
+      "pic": "//i1.hdslb.com/bfs/archive/352e8b7e4397d8bf70f7ce522ac90b4065657fa7.jpg"
+    },
+    {
+      "id": "BV1G9vzBpE8C",
+      "title": "专升本计算机网络模拟题1",
+      "channel": "Mr励志乐学",
+      "length": "44:9",
+      "views": "3870",
+      "age": "9 个月前",
+      "pic": "//i2.hdslb.com/bfs/archive/a0421e0b7961ac032ccedfb0454e54ad572e9272.jpg"
+    },
+    {
+      "id": "BV1HS7VzMEZu",
+      "title": "26年新版河北对口计算机网络基础网课",
+      "channel": "河北炳烛对口高考",
+      "length": "159:17",
+      "views": "5785",
+      "age": "1 年前",
+      "pic": "//i2.hdslb.com/bfs/archive/18891083f29f6c68a74e2148ff389becd7c76e5f.jpg"
     }
   ]
 }
