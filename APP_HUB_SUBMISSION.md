@@ -6,7 +6,7 @@
 - 版本：`0.2.1`
 - 仓库：`https://github.com/scbz4learning/study-watchlist`
 - 标签：`v0.2.1`
-- commit SHA：`4917bf0`（完整见下）
+- commit SHA：`4917bf0`（HEAD of `v0.2.1` tag at submission time, see `git log -1 v0.2.1` — the exact short SHA matches the tag, but the submission document itself is updated in a follow-up commit so HEAD may differ by ±1 commit; the maintainer running `hub check` on the tag v0.2.1 will see the same digest）
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
