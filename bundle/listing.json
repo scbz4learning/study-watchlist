@@ -16,7 +16,7 @@
     "support": "https://github.com/lymio-lab/study-watchlist/issues",
     "privacy_policy_url": "https://github.com/lymio-lab/study-watchlist/blob/main/PRIVACY.md"
   },
-  "release_notes": "0.2.0 — 数据源迁到 bilibili 公开搜索 v2（免 key，国内可达）；新增真正的实时路径；时长预算核验对真实 4 小时课程仍算数；播放面板显示真实地址，card-host on Linux 缺网页引擎已如实标注；失败/空/加载三态齐全；离线快照为可选 fallback。",
+  "release_notes": "0.3.0 — 录屏工具（tools/record_demo.py）从零写完，2:05 demo.webm 落到 evidence/；闸门与 bundle 内容相对 0.2.0 未变。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

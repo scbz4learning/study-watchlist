@@ -7,7 +7,7 @@
   ],
   "id": "study-watchlist",
   "integrity": {
-    "bundle_blake3": "ed5cf42426871ce8f5ed1229910bb12856e07cb47cf6de4912d59aca1440f524"
+    "bundle_blake3": "973d2fb657f13849c9834ce444029bfc4e483af3fd6194e915761d08f0193ba0"
   },
   "name": "学习观看清单",
   "network": {
@@ -19,5 +19,5 @@
     ]
   },
   "schema": 1,
-  "version": "0.2.1"
+  "version": "0.3.0"
 }

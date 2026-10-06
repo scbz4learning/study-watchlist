@@ -1,21 +1,29 @@
-# Submit study-watchlist 0.2.1
+# Submit study-watchlist 0.3.0
 
 ## 提交信息
 
 - 应用：`study-watchlist`
-- 版本：`0.2.1`
-- 仓库：`https://github.com/scbz4learning/study-watchlist`
-- 标签：`v0.2.1`
-- commit SHA：`4917bf0`（HEAD of `v0.2.1` tag at submission time, see `git log -1 v0.2.1` — the exact short SHA matches the tag, but the submission document itself is updated in a follow-up commit so HEAD may differ by ±1 commit; the maintainer running `hub check` on the tag v0.2.1 will see the same digest）
+- 版本：`0.3.0`
+- 仓库：`https://github.com/lymio-lab/study-watchlist`
+- 标签：`v0.3.0`
+- commit SHA：`7781e6d`（HEAD of `v0.3.0` tag at submission time — the maintainer running `hub check` on the tag v0.3.0 will see the same digest）
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
 - 平台：Linux（Ubuntu 24.04 + X11）、Android（按 `bundle/listing.json` 声明）
 - 类别：`education`
 - 能力：`storage`、`net`、`images`、`web`，存储额度 16 MiB，`agent` 为 `null`
-- 官方目录：sequence `4`（2026-09-20）；`study-watchlist 0.2.1` 不在目录中
+- 官方目录：sequence `4`（2026-09-20）；`study-watchlist 0.3.0` 不在目录中
 - 官方宿主：`native/LOCK.json` 固定的 `OctoSense-App-Hub` `0d5b47a2ae9eb98020feca26b7c895a3cf797dc1` 构建的 `card-host` 与 `hub`
 - 授权主机（已填 `manifest.network.hosts`）：`api.bilibili.com`、`www.bilibili.com`、`i0.hdslb.com`、`i1.hdslb.com`
+
+### v0.3.0 相对 v0.2.1 的变更
+
+- 补全初赛交付物：删去试用遗留的 `03-playback-unavailable.png`（被新版 03 替代）；
+  `tools/record_demo.py` 取代了 `RECORDING_SCRIPT.md`，docstring 写清用法。
+- 仓库 `evidence/demo.webm` 是 2:05 演示视频（VP9 412x892, ~1 MB）。
+- bundle 内容**实质**未变（仅 manifest 的 `version` 字段从 0.2.1 升到 0.3.0，并删了 1 个
+  未使用的 PNG）—— digest 必然变，所以下面重新 stamp 一次。
 
 ## 官方检查输出
 
@@ -23,8 +31,8 @@
 
 ```
 $ tools/octo check bundle
-octo: hub stamp -> ed5cf42426871ce8f5ed1229910bb12856e07cb47cf6de4912d59aca1440f524
-study-watchlist 0.2.1 — PASSED
+octo: hub stamp -> 973d2fb657f13849c9834ce444029bfc4e483af3fd6194e915761d08f0193ba0
+study-watchlist 0.3.0 — PASSED
   [warning] publisher-signature: unsigned: accountability rests on the hub alone
   grants: capabilities {"images", "net", "storage", "web"}, hosts {"api.bilibili.com", "i0.hdslb.com", "i1.hdslb.com", "www.bilibili.com"}, storage 16777216 bytes, agent none
 ```
@@ -86,14 +94,20 @@ study-watchlist 0.2.1 — PASSED
 - 真实捕获的 3 张截图（`01-plan-verified.png` / `02-source-unavailable.png` / `03-playback.png`）都能在指定的卡宿 + 锁版本运行时端到端复现（README §4、6）。
 - 一处**建议维护者手动确认**的项：card-host 在 Linux 当前构建里 `CxOsOp::SpawnSystemBrowser` 未实现，播放面板会显示真实地址（可复制到浏览器自行打开）但不假装渲染内嵌页面。已在 README §5 第 6 条 + §6 证据表如实标注。
 
+## 演示视频
+
+- [evidence/demo.webm](https://github.com/lymio-lab/study-watchlist/blob/main/evidence/demo.webm)
+  — 2:05，11 步覆盖初始 → 实时检索 → 5 min 预算失败（超预算 4:10:44）→ 300 min 预算成功（余 0:44:00）→ 离线快照 → empty 态。
+  由 `tools/record_demo.py` 自动驱动 card-host 抓帧 + 烧字幕 + ffmpeg 合成。
+
 ## 已知限制（如实写）
 
 1. 无章节 / 无转写 / 无大纲——来源只给整条视频的元数据。
 2. 当前主题下的时长跨度从 `44:03` 到约 9 小时；20 分钟预算通常只能装 0–1 条。
 3. 缩略图偶尔因宿主 TLS 路径不稳定而退化（缩略图为公开 https）。
 4. 实时接口直接读 bilibili v2 的 JSON 形态，上游改版会失效；失败时如实报错。
-5. 播放是跳转——不重托管内容；card-host on Linux 没有网页引擎时，宿主会尝试系统浏览器但 OS 操作未实现 → 界面只显示真实地址，未实现内嵌。
-7. AI 能力未接入，应用不需要任何 AI 也能完整运行。
+5. 播放是跳转——不重托管内容；card-host on Linux 没有网页引擎时，宿主会尝试系统浏览器但 OS 操作 `CxOsOp::SpawnSystemBrowser` 在当前 Linux 构建里未实现 → 界面只显示真实地址（可复制到浏览器自行打开），不假装渲染内嵌。视频 `evidence/demo.webm` 未演示播放面板内嵌（这台机器上跑不出来），改用 `bundle/screenshots/03-playback.png` 单独说明这个行为。
+6. AI 能力未接入，应用不需要任何 AI 也能完整运行。
 
 ## 后续路径（不在此次提交）
 
@@ -104,4 +118,4 @@ study-watchlist 0.2.1 — PASSED
 
 每个方向都写了合规风险点。**B2（模型选 cue）是 复赛 技术突破奖的方向**，有"延迟/成本/质量前后对照"实验素材的潜力。
 
-> 本次提交只针对 v0.2.1 的"整段视频 + 时长预算编排"交付，不含上面三个方向。
+> 本次提交只针对 v0.3.0 的"整段视频 + 时长预算编排"交付，不含上面三个方向。

@@ -1,14 +1,80 @@
 #!/usr/bin/env python3
-"""初赛演示：驱动 card-host 走完整 demo，每 100ms 抓一帧 PNG，叠字幕，最后 ffmpeg 拼 webm。
+"""初赛演示录屏工具：驱动 card-host 走 11 步完整 demo，每 100ms 抓一帧 PNG，叠中文字幕，最后 ffmpeg 拼 webm。
 
-修复之前的 bug：每次动作前先 GET /snap 拿当前 widget rects，按 label/id 找按钮中心点击。
-不再硬编码像素坐标——列表出来后布局会移动。
+为什么需要这个脚本：card-host on Linux 的播放面板（WebReader）宿主 OS 操作
+未实现（`CxOsOp::SpawnSystemBrowser`），所以**不能用简单的视频流截屏**；
+我们改成「抓 PNG 序列 + 烧字幕 + ffmpeg 合成」的离线方案。
+
+## 用法
+
+```sh
+# 0) 先启动 card-host（任一一种方式）
+make setup                                  # 一次性：拉锁版本运行时
+$OCTO run $A/bundle --port 8200 --hidden --detach
+# 上面命令的工具链见 OctoScript-App-Design-Flow / repo 的 README
+
+# 1) 装 ffmpeg + python3-pil + DejaVu + Noto CJK 字体
+sudo apt-get install -y ffmpeg python3-pil fonts-noto-cjk
+
+# 2) 录屏
+python3 tools/record_demo.py 8200 evidence/demo.webm
+# → 写到 /tmp/kilo/demo-frames/*.png → 拼成 evidence/demo.webm (VP9, 412x892, 10fps)
+```
+
+## 它做了什么
+
+1. **驱动**：每步先 `GET /snap` 拿当前 widget rects，**按 label/id 找按钮中心点击**（不用硬编码像素，
+   因为列表出来后布局会移动）。
+2. **抓帧**：每个 step 留 12s 给 card-host 渲染 + 取一帧 PNG（10 fps）。
+3. **烧字幕**：用 Noto Sans CJK 烧中文 step 标题 + 描述。Status text / plan label
+   是 app 自己的，字幕是演示用的 overlay。
+4. **合成**：ffmpeg 拼 PNG 序列成 VP9 webm。
+
+## 11 步演示节奏
+
+| # | t    | 动作 | 关键状态变化 |
+|---|------|------|------------|
+| 1 | 0s   | 初始页 | idle |
+| 2 | 12s  | 点「检索」 | live 20 rows |
+| 3 | 24s  | 改预算 20→5 | 准备看失败 |
+| 4 | 36s  | 加一条 4h15m 视频 | 计划：超出 4:10:44 |
+| 5 | 48s  | 失败案例保持 | "超出预算" 显示 |
+| 6 | 60s  | 清空 + 改预算 5→300 | 准备看成功 |
+| 7 | 72s  | 加同一条视频 | 计划：未超 余 0:44:00 |
+| 8 | 84s  | 成功案例保持 | "未超预算 余 X" |
+| 9 | 102s | 切离线快照 chip | 离线 20 rows |
+| 10| 120s | 离线清空 → empty | "换一个更具体的关键词再试" |
+| 11| 138s | 退出 hold 60s | 收尾 |
+
+总时长 ~3 分钟。
+
+## 录完之后
+
+- `evidence/demo.webm` 是 vp9 webm（412x892, 10fps）。GitHub 不直接预览 webm，
+  评审需下载观看。
+- `bundle/screenshots/01-03.png` 是同一波卡住的关键帧（key frame），评审
+  不想看视频时可以直接看图。
+
+## 失败态与成功态都覆盖了
+
+- **5 min 预算 + 4h15m 视频** → 计划显示 "超出预算 4:10:44"，符合 no-facts（数字
+  全来自视频 length 字段与预算输入，没编）
+- **300 min 预算 + 4h15m 视频** → "未超预算，余 0:44:00"，同一视频不同预算下行为
+  不一样，正是「可核对」
+
+## 如果 Linux 上 card-host 播放面板的内嵌渲染没出来
+
+card-host on Linux 没有网页引擎，宿主 OS 操作 `SpawnSystemBrowser` 在当前构建
+未实现。播放面板会显示真实地址（可复制到浏览器自行打开）但不假装渲染内嵌。
+在 macOS 桌面端应可走通；**本录屏脚本不演示播放面板内嵌**，而是用第三个
+截图 `03-playback.png` 说明这个行为（已写进 README §6）。
 """
 import os
 import sys
 import time
 import urllib.request
 import urllib.parse
+import json
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
@@ -78,8 +144,6 @@ def click_first_add_button(snap, wait=1):
             click(x + w_ // 2, y + h // 2, wait=wait)
             return w
     return None
-
-import json
 
 def burn_caption(png_bytes, title, body, frame_num):
     img = Image.open(BytesIO(png_bytes)).convert("RGBA")

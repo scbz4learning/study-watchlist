@@ -160,11 +160,12 @@ Linux 上首次构建 `card-host` 需要系统图形库（wayland / X11 / ALSA /
 | 项 | 状态 |
 |---|---|
 | `tools/octo check bundle` | ✅ **PASSED**（只有 unsigned 警告）：
-  `study-watchlist 0.2.1 — PASSED` / `[warning] publisher-signature: unsigned: accountability rests on the hub alone` /
+  `study-watchlist 0.3.0 — PASSED` / `[warning] publisher-signature: unsigned: accountability rests on the hub alone` /
   `grants: capabilities {"images","net","storage","web"}, hosts {"api.bilibili.com","i0.hdslb.com","i1.hdslb.com","www.bilibili.com"}, storage 16777216 bytes, agent none` |
 | `bundle/screenshots/01-plan-verified.png` | ✅ 真实捕获：bilibili 实时返回 20 条 + 预算 20 分钟 + 一条已加入 + `已排 4:15:44 / 预算 20:00（1 条） ⚠ 超出预算 3:55:44`；算术可用每条视频的 length 字段逐条复核 |
 | `bundle/screenshots/02-source-unavailable.png` | ✅ 真实捕获：实时来源空状态——宿主主机临时不可达时显示「换一个更具体的关键词再试」；同样代码路径在 12 秒取数失败时也会显示「取数失败或 12 秒超时」 |
 | `bundle/screenshots/03-playback.png` | ✅ 真实捕获：点条目后进入播放面板，标题/频道/时长 + 真实 bilibili 播放地址 `https://www.bilibili.com/video/BV1H4kwYHEcR`，可复制到浏览器自行打开 |
+| `evidence/demo.webm` | ✅ 2:05 演示视频：11 步覆盖初始 → 实时检索 → 5 min 预算失败（超 4:10:44）→ 300 min 预算成功（余 0:44:00）→ 离线快照 → empty 态；脚本 `tools/record_demo.py` 自动驱动 card-host 抓帧 + 烧字幕 + ffmpeg 合成 |
 | 一次操作 + 可核对结果 | ✅ 加入一条 → 计划总时长与预算差额实时更新（算术可用每条视频的 length 字段逐条复核） |
 | 一个失败或空状态 | ✅ 失败态（取数失败 / 12 秒超时）、空结果态、加载态三态齐全 |
 | 实时路径 | ✅ 已在联网环境实测成功（bilibili v2 搜索, 20 条, <3 秒） |
@@ -181,7 +182,7 @@ Apache License 2.0，见 [LICENSE](LICENSE)。
 
 ## 8. 后续路径（不进初赛交付）
 
-初赛交付停在 v0.2.1 的"整段视频 + 时长预算编排"上。后续（复赛 / 技术突破）的演进在
+初赛交付停在 v0.3.0 的"整段视频 + 时长预算编排"上。后续（复赛 / 技术突破）的演进在
 [ROADMAP.md](ROADMAP.md) 里展开，三个方向：
 
 - **A · bilibili 分片选择**：分P / 合集解析，让每条候选能展开成多个"段落"颗粒
