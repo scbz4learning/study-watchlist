@@ -6,7 +6,7 @@
 - 版本：`0.3.0`
 - 仓库：`https://github.com/lymio-lab/study-watchlist`
 - 标签：`v0.3.0`
-- commit SHA：`7781e6d`（HEAD of `v0.3.0` tag at submission time — the maintainer running `hub check` on the tag v0.3.0 will see the same digest）
+- commit SHA：见 `git rev-parse v0.3.0`（用 tag 而非短 SHA——避免每次自我引用导致的 SHA 漂移；维护者按 `hub check` 跑的 commit 与 tag v0.3.0 一致即可）
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
