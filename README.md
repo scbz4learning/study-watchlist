@@ -176,3 +176,17 @@ Linux 上首次构建 `card-host` 需要系统图形库（wayland / X11 / ALSA /
 ## 7. 许可证
 
 Apache License 2.0，见 [LICENSE](LICENSE)。
+
+---
+
+## 8. 后续路径（不进初赛交付）
+
+初赛交付停在 v0.2.1 的"整段视频 + 时长预算编排"上。后续（复赛 / 技术突破）的演进在
+[ROADMAP.md](ROADMAP.md) 里展开，三个方向：
+
+- **A · bilibili 分片选择**：分P / 合集解析，让每条候选能展开成多个"段落"颗粒
+- **B · AI 字幕 cue-level 切割**：先做字幕结构化（B1），再接宿主模型按 cue 选段（B2）
+- **C · MIT OpenCourseWare 课程结构源**：长期，作为"先选课程再选视频"的入口
+
+每个方向都标了"比赛合规"风险点——尤其 B2 必须守住 no-facts 边界，所有 AI 输出
+必须标"AI 建议"而不是事实。

@@ -1,19 +1,19 @@
-# Submit study-watchlist 0.2.0
+# Submit study-watchlist 0.2.1
 
 ## 提交信息
 
 - 应用：`study-watchlist`
-- 版本：`0.2.0`
-- 仓库：`https://github.com/lymio-lab/study-watchlist`
-- 标签：`v0.2.0`
-- commit SHA：`f775230`（完整见下）
+- 版本：`0.2.1`
+- 仓库：`https://github.com/scbz4learning/study-watchlist`
+- 标签：`v0.2.1`
+- commit SHA：`__SHA__:__<FILL AFTER FINAL COMMIT>`
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
 - 平台：Linux（Ubuntu 24.04 + X11）、Android（按 `bundle/listing.json` 声明）
 - 类别：`education`
 - 能力：`storage`、`net`、`images`、`web`，存储额度 16 MiB，`agent` 为 `null`
-- 官方目录：sequence `4`（2026-09-20）；`study-watchlist 0.2.0` 不在目录中
+- 官方目录：sequence `4`（2026-09-20）；`study-watchlist 0.2.1` 不在目录中
 - 官方宿主：`native/LOCK.json` 固定的 `OctoSense-App-Hub` `0d5b47a2ae9eb98020feca26b7c895a3cf797dc1` 构建的 `card-host` 与 `hub`
 - 授权主机（已填 `manifest.network.hosts`）：`api.bilibili.com`、`www.bilibili.com`、`i0.hdslb.com`、`i1.hdslb.com`
 
@@ -23,8 +23,8 @@
 
 ```
 $ tools/octo check bundle
-octo: hub stamp -> 5162ee9f98abdc3abcf6ff6e2a3ad2f29fa28a5a09562bf4fae9b49f4e7b2f31
-study-watchlist 0.2.0 — PASSED
+octo: hub stamp -> __DIGEST__:__<FILL AFTER FINAL COMMIT>
+study-watchlist 0.2.1 — PASSED
   [warning] publisher-signature: unsigned: accountability rests on the hub alone
   grants: capabilities {"images", "net", "storage", "web"}, hosts {"api.bilibili.com", "i0.hdslb.com", "i1.hdslb.com", "www.bilibili.com"}, storage 16777216 bytes, agent none
 ```
@@ -39,7 +39,7 @@ study-watchlist 0.2.0 — PASSED
 逐项落地（每一项都对应到 `bundle/main.splash` 的具体函数和事件）：
 - 主题输入：`bind ui.topic_input` `on_return: |text| search(text)`。
 - 实时取数：`fn live_search()` → `net.http_request(bilibili v2 url)` → `parse_bili(d)` → 取出 20 条带 `bvid/title/author/duration/play/pubdate/pic` 的真实记录（**没有自创 id、没有编造时长**）。
-- 时长预算核验：`fn dur_secs()` 解析 `HH:MM:SS`/`MM:SS` → 秒；`fn pick_hint(h)` 给每条算"加入后余 / 加入会超预算 mm:ss"；`fn plan_text()` 显示 `已排 hh:mm:ss / 预算 hh:mm:ss（N 条）✓ 余 mm:ss` 或 `⚠ 超出预算 mm:ss`。
+- 时长预算核验：`fn dur_secs()` 解析 `HH:MM:SS`/`MM:SS` → 秒；`fn pick_hint(h)` 给每条算"加入后余 / 加入会超预算 mm:ss"；`fn plan_text()` 显示 `已排 hh:mm:ss / 预算 hh:mm:ss（N 条）✓ 余 mm:ss` 或 `⚠ 超出预算 hh:mm:ss`。
 - 授权：每行有 `on_click: || toggle_pick(i)` 的「加入/已选」按钮，逐条选择；`fn clear_plan()` 清空。
 - 播放：行体 `on_tap: |x, y| play(h)` 把 `embed_for(h) = "https://www.bilibili.com/video/<bvid>"` 交给宿主 `WebReader.open()`。
 - 失败与空状态：实时接口返回 0 行 → 显示"换一个更具体的关键词再试"；12 秒内无响应 → 显示"取数失败或 12 秒超时"；加载中显示"正在从公开视频来源检索 …"。
@@ -94,3 +94,14 @@ study-watchlist 0.2.0 — PASSED
 4. 实时接口直接读 bilibili v2 的 JSON 形态，上游改版会失效；失败时如实报错。
 5. 播放是跳转——不重托管内容；card-host on Linux 没有网页引擎时，宿主会尝试系统浏览器但 OS 操作未实现 → 界面只显示真实地址，未实现内嵌。
 7. AI 能力未接入，应用不需要任何 AI 也能完整运行。
+
+## 后续路径（不在此次提交）
+
+`ROADMAP.md` 列了三个方向：
+- A · bilibili 分片（分P / 合集）—— 一条候选可展开成多个"段落"
+- B · AI 字幕 cue-level 切割 —— 先做字幕结构化（B1），再接宿主模型按 cue 选段（B2）
+- C · MIT OpenCourseWare 课程结构源 —— 长期，作为"先选课程"的入口
+
+每个方向都写了合规风险点。**B2（模型选 cue）是 复赛 技术突破奖的方向**，有"延迟/成本/质量前后对照"实验素材的潜力。
+
+> 本次提交只针对 v0.2.1 的"整段视频 + 时长预算编排"交付，不含上面三个方向。
