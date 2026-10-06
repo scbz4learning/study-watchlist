@@ -6,7 +6,7 @@
 - 版本：`0.2.1`
 - 仓库：`https://github.com/scbz4learning/study-watchlist`
 - 标签：`v0.2.1`
-- commit SHA：`__SHA__:__<FILL AFTER FINAL COMMIT>`
+- commit SHA：`3c77fa1`（完整见下）
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
@@ -23,7 +23,7 @@
 
 ```
 $ tools/octo check bundle
-octo: hub stamp -> __DIGEST__:__<FILL AFTER FINAL COMMIT>
+octo: hub stamp -> ed5cf42426871ce8f5ed1229910bb12856e07cb47cf6de4912d59aca1440f524
 study-watchlist 0.2.1 — PASSED
   [warning] publisher-signature: unsigned: accountability rests on the hub alone
   grants: capabilities {"images", "net", "storage", "web"}, hosts {"api.bilibili.com", "i0.hdslb.com", "i1.hdslb.com", "www.bilibili.com"}, storage 16777216 bytes, agent none

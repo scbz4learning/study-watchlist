@@ -160,7 +160,7 @@ Linux 上首次构建 `card-host` 需要系统图形库（wayland / X11 / ALSA /
 | 项 | 状态 |
 |---|---|
 | `tools/octo check bundle` | ✅ **PASSED**（只有 unsigned 警告）：
-  `study-watchlist 0.2.0 — PASSED` / `[warning] publisher-signature: unsigned: accountability rests on the hub alone` /
+  `study-watchlist 0.2.1 — PASSED` / `[warning] publisher-signature: unsigned: accountability rests on the hub alone` /
   `grants: capabilities {"images","net","storage","web"}, hosts {"api.bilibili.com","i0.hdslb.com","i1.hdslb.com","www.bilibili.com"}, storage 16777216 bytes, agent none` |
 | `bundle/screenshots/01-plan-verified.png` | ✅ 真实捕获：bilibili 实时返回 20 条 + 预算 20 分钟 + 一条已加入 + `已排 4:15:44 / 预算 20:00（1 条） ⚠ 超出预算 3:55:44`；算术可用每条视频的 length 字段逐条复核 |
 | `bundle/screenshots/02-source-unavailable.png` | ✅ 真实捕获：实时来源空状态——宿主主机临时不可达时显示「换一个更具体的关键词再试」；同样代码路径在 12 秒取数失败时也会显示「取数失败或 12 秒超时」 |
