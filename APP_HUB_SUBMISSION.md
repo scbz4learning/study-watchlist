@@ -6,7 +6,7 @@
 - 版本：`0.2.1`
 - 仓库：`https://github.com/scbz4learning/study-watchlist`
 - 标签：`v0.2.1`
-- commit SHA：`12a8bec`（完整见下）
+- commit SHA：`4917bf0`（完整见下）
 - 应用包路径：`bundle/`
 - 发布者：`lymio-lab`（`lymio-lab`）
 - 签名：**unsigned**（首次提交，未签）
